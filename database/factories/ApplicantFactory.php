@@ -24,6 +24,7 @@ class ApplicantFactory extends Factory
             'birth_place' => $this->faker->city,
             'school' => $this->faker->company,
             'officer_name' => $this->faker->name,
+            'phone' => $this->faker->phoneNumber,
             'status' => $this->faker->randomElement(['Cleared', 'Not Cleared', 'Pending']),
             'created_at' => $this->faker->dateTime(),
         ];

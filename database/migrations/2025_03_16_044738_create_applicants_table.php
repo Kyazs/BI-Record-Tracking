@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('full_name');
             $table->integer('age');
             $table->string('address');
+            $table->string('phone');
             $table->date('date_of_birth');
             $table->string('birth_place');
             $table->string('school');

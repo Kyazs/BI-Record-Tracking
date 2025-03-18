@@ -10,7 +10,7 @@ class Applicant extends Model
     use HasFactory;
 
     protected $fillable = [
-        'full_name', 'age', 'address', 'date_of_birth', 'birth_place', 'school', 'status',
+        'full_name', 'age', 'address', 'phone', 'date_of_birth', 'birth_place', 'school', 'status', 'officer_name'
     ];
 
     public function documents()

@@ -22,13 +22,17 @@ Route::middleware('auth')->group(function () {
     // })->middleware(['auth', 'verified'])->name('dashboard');
 
     Route::get('/dashboard', [PageController::class, 'index'])->name('dashboard');
-    
+
     Route::get('/manage-user', [PageController::class, 'manageUser'])->name('manageUser');
 
 
 
     Route::get('/stream-applicants', [ApplicantController::class, 'streamApplicants']);
     Route::get('/manage-applicant', [ApplicantController::class, 'index'])->name('manageApplicant');
+    Route::get('/applicant/{id}', [ApplicantController::class, 'edit'])->name('showApplicant');
+    Route::put('/applicant/{id}', [ApplicantController::class, 'update'])->name('updateApplicant');
+    Route::delete('/applicant/{id}', [ApplicantController::class, 'destroy'])->name('deleteApplicant');
+    Route::get('/applicants', [ApplicantController::class, 'show'])->name('search.applicant');
 });
 
 require __DIR__ . '/settings.php';
