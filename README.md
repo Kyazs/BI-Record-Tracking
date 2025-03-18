@@ -1,4 +1,4 @@
-# Record Tracking System
+# Background Investigation - Record Tracking System
 
 ## 📌 Project Overview
 
@@ -28,8 +28,8 @@ The Record Tracking System is a web-based application designed to streamline the
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/record-tracking-system.git
-    cd record-tracking-system
+    git clone https://github.com/yourusername/BI-Record-Tracking.git
+    cd BI-Record-Tracking
     ```
 
 2. Install dependencies:
