@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 
 import { usePage } from '@inertiajs/vue3';
-import { FileArchive, Home, UserPlus, Users } from 'lucide-vue-next';
+import { FileArchive, Home, LogOut, UserPlus, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const page = usePage();
@@ -39,6 +39,12 @@ const data = ref({
             title: 'Manage Applicant',
             url: '/manage-applicant',
             icon: UserPlus,
+            isActive: false,
+        },
+        {
+            title: 'Manage Log',
+            url: '/logs',
+            icon: FileArchive,
             isActive: false,
         },
     ],
@@ -85,6 +91,14 @@ const isActive = (href: string) => {
                             <a :href="item.url" class="flex items-center gap-2 font-medium">
                                 <component :is="item.icon" class="size-4" />
                                 {{ item.title }}
+                            </a>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton as-child>
+                            <a href="/logout" class="flex items-center gap-2 font-medium text-red-500">
+                                <LogOut class="size-4" />
+                                Logout
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

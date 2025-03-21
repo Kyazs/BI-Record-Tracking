@@ -4,13 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Observers\ApplicantObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy(ApplicantObserver::class)]
 class Applicant extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'full_name', 'age', 'address', 'phone', 'date_of_birth', 'birth_place', 'school', 'status', 'officer_name'
+        'full_name',
+        'age',
+        'address',
+        'phone',
+        'date_of_birth',
+        'birth_place',
+        'school',
+        'status',
+        'officer_name',
     ];
 
     public function documents()

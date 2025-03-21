@@ -10,7 +10,7 @@ class Document extends Model
     use HasFactory;
 
     protected $fillable = [
-        'applicant_id', 'officer_name', 
+        'applicant_id',
         'barangay_cert_path',
         'pnp_clearance_path',
         'rtc_clearance_path',

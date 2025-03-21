@@ -1,6 +1,25 @@
 <script lang="ts">
 export const iframeHeight = '800px';
 export const description = 'A sidebar with submenus.';
+export default {
+    methods: {
+        handleImageError(event, key) {
+            console.error(`❌ Image load error for: ${key}`);
+            event.target.style.display = 'none'; // Hides broken images
+        },
+        openImage(url) {
+            this.selectedImage = url;
+            this.showModal = true;
+        },
+    },
+    components: { VueEasyLightbox },
+    data() {
+        return {
+            showModal: false,
+            selectedImage: '',
+        };
+    },
+};
 </script>
 
 <script setup lang="ts">
@@ -15,7 +34,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -24,10 +42,12 @@ import { toast } from '@/components/ui/toast';
 import Toaster from '@/components/ui/toast/Toaster.vue';
 import ToastProvider from '@/components/ui/toast/ToastProvider.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import { ref } from 'vue';
+import VueEasyLightbox from 'vue-easy-lightbox';
 import * as z from 'zod';
 
 // Props (Received from Inertia Laravel Controller)
@@ -45,7 +65,23 @@ const props = defineProps<{
         officer_name: string;
         created_at: string;
     };
+    documents: Object[];
 }>();
+
+const documents = ref({ ...props.documents }); // Ensure reactivity
+const updatedFiles = ref({}); // Track modified images
+const handleFileUpload = (event, key) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileURL = URL.createObjectURL(file);
+
+    // Update UI immediately with new image preview
+    documents.value = { ...documents.value, [key]: fileURL };
+
+    // Store actual file for submission
+    updatedFiles.value = { ...updatedFiles.value, [key]: file };
+};
 
 // Define Form Schema
 const formSchema = toTypedSchema(
@@ -59,9 +95,6 @@ const formSchema = toTypedSchema(
         school: z.string().min(2),
         status: z.string(),
         officer_name: z.string(),
-        created_at: z.string().refine((val) => !isNaN(Date.parse(val)), {
-            message: 'Invalid date format',
-        }),
     }),
 );
 
@@ -97,24 +130,43 @@ const startEditing = () => {
 const cancelEditing = () => {
     isEditing.value = false;
     setValues(originalData.value); // Reset Form to Original Values
+    documents.value = { ...props.documents }; // Reset Documents
 };
 
 // Save Changes
 const saveChanges = handleSubmit(async (values) => {
-    console.log('Submitting form...', values); // Debugging line
+    console.log('Form Values:', values); // Log the form values for debugging
+
+    const formData = new FormData();
+
+    // Append regular form data
+    Object.entries(values).forEach(([key, value]) => {
+        formData.append(key, value);
+    });
+
+    // Append modified images
+    Object.entries(updatedFiles.value).forEach(([key, file]) => {
+        formData.append(`file[${key}]`, file);
+    });
+
     try {
         const response = await fetch(`/applicant/${applicant.value.id}`, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
             },
-            body: JSON.stringify(values),
+            body: formData,
         });
 
-        if (!response.ok) throw new Error('Failed to save');
+        if (!response.ok) throw new Error('Failed to save changes');
 
-        applicant.value = { ...values };
+        const responseData = await response.json();
+
+        // Update local state with the response data
+        applicant.value = responseData.applicant;
+        documents.value = responseData.documents;
+
+        updatedFiles.value = {}; // Reset modified files
         isEditing.value = false;
 
         toast({
@@ -122,14 +174,18 @@ const saveChanges = handleSubmit(async (values) => {
             description: 'Your changes have been updated.',
             variant: 'default',
         });
+
+        // Reload the page to fetch the latest data
+        window.location.reload();
     } catch (error) {
         toast({
             title: 'Error',
-            description: error.message || 'Could not save changes.',
+            description: 'Could not save changes.',
             variant: 'destructive',
         });
     }
 });
+
 
 // Delete Applicant
 const deleteApplicant = async () => {
@@ -171,7 +227,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: `Applicant ID: ${applicant.value.id}`,
         href: `#`,
-    }
+    },
 ];
 </script>
 
@@ -302,7 +358,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
                                 <FormField v-slot="{ componentField }" name="officer_name">
                                     <FormItem>
-                                        <FormLabel>Officer Name</FormLabel>
+                                        <FormLabel>Officer In-Charged</FormLabel>
                                         <FormControl>
                                             <Input type="text" v-bind="componentField" :disabled="!isEditing" />
                                         </FormControl>
@@ -314,11 +370,65 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     <FormItem>
                                         <FormLabel>Created At</FormLabel>
                                         <FormControl>
-                                            <Input type="text" v-bind="componentField" :disabled="true" />
+                                            <Input 
+                                                type="text" 
+                                                v-bind="componentField" 
+                                                :value="new Date(applicant.created_at).toLocaleString()" 
+                                                disabled 
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
+                            </div>
+                            <div v-if="!isEditing" class="mt-8">
+                                <h2 class="mb-4 text-xl font-semibold text-gray-200">Applicant Documents</h2>
+                                <div v-if="documents" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div
+                                        v-for="(url, key) in documents"
+                                        :key="key"
+                                        class="flex flex-col items-center rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-md"
+                                    >
+                                        <p class="mb-2 text-sm font-medium text-gray-300">
+                                            {{ key.replace('_path', '').replace('_', ' ').toUpperCase() }}
+                                        </p>
+                                        <div class="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-700">
+                                            <img
+                                                v-if="url"
+                                                :src="url"
+                                                class="h-full w-auto cursor-pointer object-contain"
+                                                alt="Document"
+                                                @error="handleImageError($event, key)"
+                                                @click="openImage(url)"
+                                            />
+                                            <p v-else class="text-sm text-red-500">No file uploaded</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Lightbox Component -->
+                                <vue-easy-lightbox :visible="showModal" :imgs="[selectedImage]" @hide="showModal = false" />
+                            </div>
+
+                            <div v-else class="mt-8">
+                                <h2 class="mb-4 text-xl font-semibold text-gray-200">Edit Applicant Documents</h2>
+                                <div v-if="documents" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    <div
+                                        v-for="(url, key) in documents"
+                                        :key="key"
+                                        class="flex flex-col items-center rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-md"
+                                    >
+                                        <p class="mb-2 text-sm font-medium text-gray-300">
+                                            {{ key.replace('_path', '').replace('_', ' ').toUpperCase() }}
+                                        </p>
+                                        <div class="relative flex h-40 w-full items-center justify-center overflow-hidden rounded-lg bg-gray-700">
+                                            <input
+                                                type="file"
+                                                class="block w-full text-sm text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gray-200 hover:file:bg-gray-600"
+                                                @change="handleFileUpload($event, key)"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                         <!-- Action Buttons -->

@@ -173,6 +173,7 @@ onMounted(() => {
                                 <TableCell>
                                     <LucideEye
                                         class="h-6 w-6 cursor-pointer text-gray-700 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+                                        @click="router.get(`/applicant/${applicant.id}`)"
                                     />
                                 </TableCell>
                             </TableRow>

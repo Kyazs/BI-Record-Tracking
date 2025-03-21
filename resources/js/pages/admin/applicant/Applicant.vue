@@ -21,10 +21,9 @@ import { Toaster, useToast } from '@/components/ui/toast';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { debounce } from 'lodash'; // ✅ Debounce to prevent excessive API calls 
-import { LucideArrowLeft, LucideArrowRight, LucideEye } from 'lucide-vue-next';
-import { onMounted, onUnmounted, ref, reactive, watch } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+import { debounce } from 'lodash'; // ✅ Debounce to prevent excessive API calls
+import { LucideArrowLeft, LucideArrowRight, LucideEye, LucidePlusCircle } from 'lucide-vue-next';
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Manage Applicant', href: '/manage-applicant' }];
 
@@ -70,7 +69,6 @@ const goToPage = async (url: string | null) => {
     }
 };
 
-
 // 🔥 Debounced API Call to Reduce Lag
 const fetchApplicants = debounce(async () => {
     let queryParams = new URLSearchParams();
@@ -99,10 +97,6 @@ const fetchApplicants = debounce(async () => {
         console.error('Error fetching applicants:', error);
     }
 }, 300);
-
-
-
-
 
 watch([search, selectedStatus, sortOrder], fetchApplicants);
 
@@ -142,9 +136,8 @@ onUnmounted(() => {
 });
 </script>
 
-
 <template>
-    <Head title="Dashboard" />
+    <Head title="Manage Applicant" />
     <Toaster />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-1 flex-col gap-4 p-4">
@@ -171,17 +164,23 @@ onUnmounted(() => {
                     </DropdownMenu>
                     <DropdownMenu>
                         <DropdownMenuTrigger as-child>
-                            <Button variant="outline">{{ sortOrder === 'asc' ? 'Ascending' : 'Descending' }}</Button>
+                            <Button variant="outline">{{ sortOrder === 'asc' ? 'Oldest' : 'Latest' }}</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent class="w-56">
                             <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuRadioGroup v-model="sortOrder">
-                                <DropdownMenuRadioItem value="asc">Ascending</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="desc">Descending</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="asc">Oldest</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="desc">Latest</DropdownMenuRadioItem>
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                </div>
+                <div class="ml-auto">
+                    <Button @click="router.get('/manage-applicant/create-applicant')">
+                        <LucidePlusCircle class="h-6 w-6" />
+                        Add
+                    </Button>
                 </div>
             </div>
             <div class="relative min-h-[100vh] flex-1 md:min-h-min">
