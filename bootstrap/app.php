@@ -21,7 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
-            RoleMiddleware::class.':role',
+
+        ]);
+
+        $middleware->alias([
+            'is_admin' => RoleMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

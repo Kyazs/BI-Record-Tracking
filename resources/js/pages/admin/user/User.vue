@@ -25,10 +25,6 @@ const goToPage = (url: string) => {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Dashboard',
-        href: '/',
-    },
-    {
         title: 'Manage User',
         href: '/manage-user',
     },

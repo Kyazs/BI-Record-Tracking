@@ -43,7 +43,7 @@ import Toaster from '@/components/ui/toast/Toaster.vue';
 import ToastProvider from '@/components/ui/toast/ToastProvider.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import { ref } from 'vue';
@@ -68,6 +68,8 @@ const props = defineProps<{
     documents: Object[];
 }>();
 
+// Access the shared Inertia data
+const auth = usePage().props.auth as { user?: { role?: string } };
 const documents = ref({ ...props.documents }); // Ensure reactivity
 const updatedFiles = ref({}); // Track modified images
 const handleFileUpload = (event, key) => {
@@ -242,8 +244,8 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <div class="flex items-center justify-between">
                         <span class="text-lg font-semibold text-gray-200">APPLICANT DETAILS</span>
                         <div class="flex gap-2">
-                            <Button v-if="!isEditing" class="bg-green-700 text-white hover:bg-green-900" @click="startEditing"> Edit </Button>
-                            <AlertDialog v-if="!isEditing">
+                            <Button v-if="!isEditing && auth?.user?.role === 'admin'" class="bg-green-700 text-white hover:bg-green-900" @click="startEditing"> Edit </Button>
+                            <AlertDialog v-if="!isEditing && auth?.user?.role === 'admin'">
                                 <AlertDialogTrigger> <Button variant="destructive"> Delete </Button></AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>

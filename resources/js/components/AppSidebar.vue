@@ -10,17 +10,17 @@ import {
     type SidebarProps,
     SidebarRail,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 
 import { usePage } from '@inertiajs/vue3';
 import { FileArchive, Home, LogOut, UserPlus, Users } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 const page = usePage();
 const currentUrl = computed(() => page.url);
 
 const props = defineProps<SidebarProps>();
 
-// This is sample data.
 const data = ref({
     navMain: [
         {
@@ -42,7 +42,7 @@ const data = ref({
             isActive: false,
         },
         {
-            title: 'Manage Log',
+            title: 'Logs',
             url: '/logs',
             icon: FileArchive,
             isActive: false,
@@ -57,9 +57,60 @@ const navMain = ref([
 ]);
 
 const isActive = (href: string) => {
-  return currentUrl.value === href; // Exact match only
+    return currentUrl.value === href; // Exact match only
 };
 
+const isAdmin = computed(() => page.props.auth.user.role === 'admin'); // Assuming role is available in page props
+
+const filteredNavMain = computed(() => {
+    return data.value.navMain.filter(item => {
+        if (item.url === '/manage-user' && !isAdmin.value) {
+            return false; // Exclude "Manage User" for non-admin users
+        }
+        return true;
+    });
+});
+
+const successMessage = ref('');
+const errorMessage = ref('');
+const isBackingUp = ref(false);
+
+const handleBackup = () => {
+    isBackingUp.value = true;
+
+    fetch(route('backup.run'))
+        .then(response => response.json())
+        .then(() => {
+            checkBackupStatus();
+        })
+        .catch(error => {
+            console.error("Backup failed:", error);
+            errorMessage.value = "Backup failed. Please try again.";
+            isBackingUp.value = false;
+        });
+};
+
+const checkBackupStatus = () => {
+    fetch(route('backup.status'))
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "in_progress") {
+                successMessage.value = "Backup is in progress...";
+                setTimeout(checkBackupStatus, 3000); // Check every 3 seconds
+            } else if (data.status === "completed") {
+                successMessage.value = "Backup Completed!";
+                isBackingUp.value = false;
+            } else {
+                successMessage.value = "No backup in progress.";
+                isBackingUp.value = false;
+            }
+        })
+        .catch(error => {
+            console.error("Error checking backup status:", error);
+            errorMessage.value = "Error checking backup status.";
+            isBackingUp.value = false;
+        });
+};
 </script>
 
 <template>
@@ -86,7 +137,7 @@ const isActive = (href: string) => {
         <SidebarContent>
             <SidebarGroup>
                 <SidebarMenu>
-                    <SidebarMenuItem v-for="(item, index) in data.navMain" :key="item.title">
+                    <SidebarMenuItem v-for="(item, index) in filteredNavMain" :key="item.title">
                         <SidebarMenuButton as-child :is-active="isActive(item.url)">
                             <a :href="item.url" class="flex items-center gap-2 font-medium">
                                 <component :is="item.icon" class="size-4" />
@@ -106,5 +157,19 @@ const isActive = (href: string) => {
             </SidebarGroup>
         </SidebarContent>
         <SidebarRail />
+        <div class="mt-auto p-4">
+            <!-- Alert Messages -->
+            <div v-if="successMessage" class="alert alert-success">
+                {{ successMessage }}
+            </div>
+            <div v-if="errorMessage" class="alert alert-danger">
+                {{ errorMessage }}
+            </div>
+
+            <!-- Backup Button -->
+            <Button variant="destructive" class="btn btn-primary w-full" :disabled="isBackingUp" @click="handleBackup" id="backup-btn"> 
+                {{ isBackingUp ? 'Backing Up...' : 'Backup Now' }}
+            </Button>
+        </div>
     </Sidebar>
 </template>

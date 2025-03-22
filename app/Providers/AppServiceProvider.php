@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +24,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->googleDriver();
+        $this->gatesAuthorization();
+
+        Inertia::share([
+            'auth' => fn () => [
+                'user' => Auth::user() ? [
+                    'id' => Auth::user()->id,
+                    'name' => Auth::user()->name,
+                    'role' => Auth::user()->role, // Pass role to Vue
+                ] : null,
+            ],
+        ]);
     }
 
     /**
@@ -53,5 +68,25 @@ class AppServiceProvider extends ServiceProvider
         } catch(\Exception $e) {
             // your exception handling logic
         }
+    }
+
+    public function gatesAuthorization(): void
+    {
+        // $this->registerPolicies(); // Removed or commented out as the method is undefined
+
+        // Define an 'admin' gate
+        Gate::define('admin', function (User $user) {
+            return $user->role === 'admin';
+        });
+    
+        // Define an 'officer' gate
+        Gate::define('officer', function (User $user) {
+            return $user->role === 'officer';
+        });
+    
+        // Define a gate that allows both admin and officer roles
+        Gate::define('manage-records', function (User $user) {
+            return in_array($user->role, ['admin', 'officer']);
+        });
     }
 }

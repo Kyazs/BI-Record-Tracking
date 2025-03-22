@@ -5,28 +5,24 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class RoleMiddleware
 {
     /**
      * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @param  string  $role
-     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handle(Request $request, Closure $next, string $role)
+    public function handle(Request $request, Closure $next)
     {
-        // if (!Auth::check() || !Auth::user()) {
-        //     if ($request->route()->getName() !== 'login') {
-        //         return redirect()->route('login');
-        //     }
-        // }
+        // Check if the user is authenticated
+        if (!Auth::check()) {
+            return Inertia::render('auth/login'); // Render the 'Home' page if not authenticated
+        }
 
-        // if (Auth::check() && Auth::user() && Auth::user()->role !== $role) {
-        //     abort(403, 'Forbidden');
-        // }
+        // Check if the user's role is 'admin'
+        if ($request->user()->role !== 'admin') {
+            return redirect()->route('dashboard')->with('error', 'You are not authorized to access the page: ' . $request->path());
+        }
 
         return $next($request);
     }

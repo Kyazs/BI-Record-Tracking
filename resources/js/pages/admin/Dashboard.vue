@@ -26,6 +26,7 @@ const props = defineProps({
     totalApplicants: Number,
     totalUsers: Number,
     newApplicantId: Number,
+    error: String, // Add error prop
 });
 const { toast } = useToast(); // ✅ Initialize Toast
 const applicants = ref(props.applicants || { data: [], current_page: 1, last_page: 1, prev_page_url: null, next_page_url: null });
@@ -43,6 +44,15 @@ const goToPage = (url: string) => {
 onMounted(() => {
     applicants.value = props.applicants;
     totalApplicants.value = props.totalApplicants;
+
+    // ✅ Handle error message
+    if (props.error) {
+        toast({
+            title: 'Error',
+            description: props.error,
+            variant: 'destructive', // Optional: Use a variant for error styling
+        });
+    }
 
     const eventSource = new EventSource('/stream-applicants');
 

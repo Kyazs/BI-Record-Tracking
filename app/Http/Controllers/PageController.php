@@ -18,7 +18,7 @@ class PageController extends Controller
         $applicants = Applicant::latest()->paginate(10);
         $totalApplicants = Applicant::count();
         $totalUsers = DB::table('users')->count(); // Count all users
-        return Inertia::render('admin/Dashboard', ['applicants' => $applicants, 'totalApplicants' => $totalApplicants, 'totalUsers' => $totalUsers]);
+        return Inertia::render('admin/Dashboard', ['applicants' => $applicants, 'totalApplicants' => $totalApplicants, 'totalUsers' => $totalUsers, 'error' => session('error')]);
     }
 
     public function manageUser(): Response
