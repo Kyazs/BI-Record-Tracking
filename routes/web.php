@@ -48,26 +48,27 @@ Route::middleware(['auth', RoleMiddleware::class])->group(function () {
     Route::post('/applicant/{id}', [ApplicantController::class, 'update'])->name('applicant.update');
     Route::delete('/applicant/{id}', [ApplicantController::class, 'destroy'])->name('deleteApplicant');
 
+});
+
     // route for backup
     Route::get('/backup', function (Request $request) {
         // Unique rate limiter key (per user)
         $key = 'backup-run-' . ($request->user()->id ?? $request->ip());
         // Prevent multiple backups within 5 minutes
         if (RateLimiter::tooManyAttempts($key, 1)) {
-            return back()->with('error', 'You can only perform a backup every 5 minutes.');
+            return response()->json(['error' => 'You can only perform a backup every 5 minutes.'], 429);
         }
         // Lock for 5 minutes (300 seconds)
         RateLimiter::hit($key, 300);
         // Dispatch the backup job to the queue
         dispatch(new RunBackupJob());
-        return back()->with('success', 'Backup is being processed in the background!');
+        return response()->json(['success' => 'Backup is being processed in the background!']);
     })->name('backup.run');
     Route::get('/backup/status', function () {
         return response()->json([
             'status' => Cache::get('backup_status', 'not_started'),
         ]);
     })->name('backup.status');
-});
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
