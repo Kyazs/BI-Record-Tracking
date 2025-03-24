@@ -188,7 +188,7 @@ class ApplicantController extends Controller
             ]);
         }
 
-        // Transform only certificate fields into accessible URLs
+        // Ensure correct storage path
         $certificates = collect([
             'barangay_cert' => $documents->barangay_cert_path,
             'pnp_clearance' => $documents->pnp_clearance_path,
@@ -196,7 +196,8 @@ class ApplicantController extends Controller
             'school_cert' => $documents->school_cert_path,
             'derogatory_records' => $documents->derogatory_records_path,
         ])->mapWithKeys(function ($value, $key) {
-            $url = $value ? asset("storage/{$value}") : null;  // ✅ Use asset() to fix path
+            // Use correct storage path
+            $url = $value ? asset("storage/certificates/" . basename($value)) : null;
             return [$key => $url];
         });
 
