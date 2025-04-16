@@ -79,7 +79,7 @@ return [
          * updater will only work when your application is bundled
          * for production.
          */
-        'enabled' => env('NATIVEPHP_UPDATER_ENABLED', true),
+        'enabled' => env('NATIVEPHP_UPDATER_ENABLED', false),
 
         /**
          * The updater provider to use.
@@ -127,7 +127,7 @@ return [
         'default' => [
             'queues' => ['default'],
             'memory_limit' => 128,
-            'timeout' => 60,
+            'timeout' => 300,
         ],
     ],
 
@@ -135,11 +135,13 @@ return [
      * Define your own scripts to run before and after the build process.
      */
     'prebuild' => [
-        // 'npm run build',
+        'npm run build',
+        'php artisan optimize', // Run another command before the build
     ],
 
     'postbuild' => [
-        // 'rm -rf public/build',
+        'rm -rf public/build',
+        'npm run release', // Run a command after the build
     ],
 
     /**

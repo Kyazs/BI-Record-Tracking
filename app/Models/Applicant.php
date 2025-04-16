@@ -21,7 +21,10 @@ class Applicant extends Model
         'birth_place',
         'school',
         'status',
-        'officer_name',
+        'pnp_officer_name',
+        'barangay_officer_name',
+        'rtc_officer_name',
+        'school_officer_name',
     ];
 
     public function documents()

@@ -62,8 +62,12 @@ const props = defineProps<{
         birth_place: string;
         school: string;
         status: string;
-        officer_name: string;
+        pnp_officer_name: string;
+        rtc_officer_name: string;
+        school_officer_name: string;
+        barangay_officer_name: string;
         created_at: string;
+        updated_at: string;
     };
     documents: Object[];
 }>();
@@ -77,6 +81,7 @@ const handleFileUpload = (event, key) => {
     if (!file) return;
 
     const fileURL = URL.createObjectURL(file);
+    console.log(`File selected for ${key}:`, file.name);
 
     // Update UI immediately with new image preview
     documents.value = { ...documents.value, [key]: fileURL };
@@ -95,8 +100,11 @@ const formSchema = toTypedSchema(
         address: z.string().min(5),
         birth_place: z.string().min(2),
         school: z.string().min(2),
-        status: z.string(),
-        officer_name: z.string(),
+        status: z.enum(['Cleared', 'Not Cleared', 'Pending']),
+        pnp_officer_name: z.string(),
+        rtc_officer_name: z.string(),
+        barangay_officer_name: z.string(),
+        school_officer_name: z.string(),
     }),
 );
 
@@ -133,6 +141,7 @@ const cancelEditing = () => {
     isEditing.value = false;
     setValues(originalData.value); // Reset Form to Original Values
     documents.value = { ...props.documents }; // Reset Documents
+    window.location.reload();
 };
 
 // Save Changes
@@ -143,30 +152,53 @@ const saveChanges = handleSubmit(async (values) => {
 
     // Append regular form data
     Object.entries(values).forEach(([key, value]) => {
-        formData.append(key, value);
+        if (value !== null && value !== undefined) {
+            formData.append(key, value);
+        }
     });
 
-    // Append modified images
+    // Explicitly include status in the form data
+    formData.append('status', applicant.value.status);
+
+    // Debug what's being uploaded
+    console.log('Files to upload:', Object.keys(updatedFiles.value).length);
+    
+    // Append modified images with proper naming
     Object.entries(updatedFiles.value).forEach(([key, file]) => {
+        console.log('Appending file:', key, file.name);
         formData.append(`file[${key}]`, file);
     });
+
+    // Log FormData contents (for debugging)
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+    }
 
     try {
         const response = await fetch(`/applicant/${applicant.value.id}`, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                // Note: Do NOT set Content-Type with FormData as the browser sets it with boundary
             },
             body: formData,
         });
 
-        if (!response.ok) throw new Error('Failed to save changes');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            throw new Error(`Failed to save changes: ${response.status} ${response.statusText}`);
+        }
 
         const responseData = await response.json();
+        console.log('Success response:', responseData);
 
         // Update local state with the response data
         applicant.value = responseData.applicant;
-        documents.value = responseData.documents;
+        
+        if (responseData.documents) {
+            documents.value = responseData.documents;
+        }
 
         updatedFiles.value = {}; // Reset modified files
         isEditing.value = false;
@@ -178,16 +210,16 @@ const saveChanges = handleSubmit(async (values) => {
         });
 
         // Reload the page to fetch the latest data
-        window.location.reload();
+        window.location.href = window.location.href;
     } catch (error) {
+        console.error('Save error:', error);
         toast({
             title: 'Error',
-            description: 'Could not save changes.',
+            description: error.message || 'Could not save changes.',
             variant: 'destructive',
         });
     }
 });
-
 
 // Delete Applicant
 const deleteApplicant = async () => {
@@ -276,14 +308,21 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     </FormItem>
                                 </FormField>
 
-                                <FormField v-slot="{ componentField }" name="status">
+                                <FormField v-slot="{ componentField, setValue }" name="status">
                                     <FormItem>
                                         <FormLabel>Status</FormLabel>
                                         <FormControl>
-                                            <Select v-model="applicant.status" :disabled="!isEditing">
+                                            <Select 
+                                                :modelValue="applicant.status" 
+                                                @update:modelValue="(val) => {
+                                                    applicant.status = val as 'Cleared' | 'Not Cleared' | 'Pending';
+                                                    setValue(val); // Also update form field value
+                                                }"
+                                                :disabled="!isEditing"
+                                            >
                                                 <SelectTrigger
                                                     class="w-full rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition-all focus:ring-2"
-                                                    :class="[statusColors[applicant.status] || 'bg-transparent text-white']"
+                                                    :class="[statusColors[applicant.status as 'Cleared' | 'Not Cleared' | 'Pending'] || 'bg-transparent text-white']"
                                                 >
                                                     <SelectValue>{{ applicant.status }}</SelectValue>
                                                 </SelectTrigger>
@@ -357,10 +396,37 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
-
-                                <FormField v-slot="{ componentField }" name="officer_name">
+                                <div class="col-span-2"><br></div>
+                                <FormField v-slot="{ componentField }" name="pnp_officer_name">
                                     <FormItem>
-                                        <FormLabel>Officer In-Charged</FormLabel>
+                                        <FormLabel>PNP Officer Name</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" v-bind="componentField" :disabled="!isEditing" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+                                <FormField v-slot="{ componentField }" name="rtc_officer_name">
+                                    <FormItem>
+                                        <FormLabel>RTC Officer Name</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" v-bind="componentField" :disabled="!isEditing" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+                                <FormField v-slot="{ componentField }" name="barangay_officer_name">
+                                    <FormItem>
+                                        <FormLabel>Barangay Officer Name</FormLabel>
+                                        <FormControl>
+                                            <Input type="text" v-bind="componentField" :disabled="!isEditing" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+                                <FormField v-slot="{ componentField }" name="school_officer_name">
+                                    <FormItem>
+                                        <FormLabel>School Officer Name</FormLabel>
                                         <FormControl>
                                             <Input type="text" v-bind="componentField" :disabled="!isEditing" />
                                         </FormControl>
@@ -382,6 +448,21 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         <FormMessage />
                                     </FormItem>
                                 </FormField>
+                                <FormField v-slot="{ componentField }" name="updated_at">
+                                    <FormItem>
+                                        <FormLabel>Updated At</FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                type="text" 
+                                                v-bind="componentField" 
+                                                :value="new Date(applicant.updated_at).toLocaleString()" 
+                                                disabled 
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
+
                             </div>
                             <div v-if="!isEditing" class="mt-8">
                                 <h2 class="mb-4 text-xl font-semibold text-gray-200">Applicant Documents</h2>

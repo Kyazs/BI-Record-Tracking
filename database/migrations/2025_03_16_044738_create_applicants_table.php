@@ -20,7 +20,10 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->string('birth_place');
             $table->string('school');
-            $table->string('officer_name');            
+            $table->string('pnp_officer_name');
+            $table->string('school_officer_name');
+            $table->string('barangay_officer_name');
+            $table->string('rtc_officer_name');
             $table->enum('status', ['Cleared', 'Not Cleared', 'Pending'])->default('Pending');
             
             $table->timestamps();

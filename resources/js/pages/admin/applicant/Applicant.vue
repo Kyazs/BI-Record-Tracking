@@ -103,7 +103,7 @@ watch([search, selectedStatus, sortOrder], fetchApplicants);
 // ✅ Fetch Initial Data & Setup SSE
 onMounted(() => {
     fetchApplicants();
-    eventSource = new EventSource('/stream-applicants');
+    // eventSource = new EventSource('/stream-applicants');
     eventSource.onmessage = (event) => {
         try {
             const newData = JSON.parse(event.data);
@@ -216,7 +216,6 @@ onUnmounted(() => {
                                 <TableHead>Age</TableHead>
                                 <TableHead>Date of Birth</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Officer Incharge</TableHead>
                                 <TableHead>Created at</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
@@ -241,7 +240,6 @@ onUnmounted(() => {
                                         {{ applicant.status }}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>{{ applicant.officer_name }}</TableCell>
                                 <TableCell>{{ applicant.created_at }}</TableCell>
                                 <TableCell>
                                     <LucideEye
