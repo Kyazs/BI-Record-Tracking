@@ -18,6 +18,7 @@ return [
                     'storage/app',
                     'storage/app/public',
                     'config', // Optional: Include config files
+                    'public/storage', // Optional: Include public storage
                 ],
 
                 /*
